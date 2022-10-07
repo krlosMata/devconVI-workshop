@@ -21,6 +21,7 @@
     "@hermeznetwork/commonjs": "^0.3.3",
     "circom_tester": "^0.0.18",
     "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
     "mocha": "^10.0.0"
   }
 }

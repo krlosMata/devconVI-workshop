@@ -5,6 +5,29 @@ const { float40 } = require("@hermeznetwork/commonjs");
 const feeUtils = require("@hermeznetwork/commonjs").feeTable;
 const txUtils = require("@hermeznetwork/commonjs").txUtils;
 const Constants = require("@hermeznetwork/commonjs").Constants;
+const SMTTmpDb = require("@hermeznetwork/commonjs").SMTTmpDb;
+const stateUtils = require("@hermeznetwork/commonjs").stateUtils;
+const SMT = require("@hermeznetwork/commonjs/node_modules/circomlib/index").SMT;
+const poseidonHash = require("@hermeznetwork/commonjs/node_modules/circomlib/index").poseidon;
+
+async function getLeafInfo(rollupDB, idx, numBatch){
+    const stateRoot = await rollupDB.getStateRoot(numBatch);
+    if (!stateRoot) return null;
+    const dbState = new SMTTmpDb(rollupDB.db);
+    const tmpTree = new SMT(dbState, stateRoot);
+    const resFind = await tmpTree.find(Scalar.e(idx));
+    // Get leaf information
+    if (resFind.found) {
+        const foundValueId = poseidonHash([resFind.foundValue, idx]);
+        const stateArray = await rollupDB.db.get(foundValueId);
+        const state = stateUtils.array2State(stateArray);
+        state.idx = Number(idx);
+        resFind.state = state;
+        delete resFind.foundValue;
+    }
+    delete resFind.isOld0;
+    return resFind;
+}
 
 async function depositTx(bb, account, tokenID, loadAmount) {
     bb.addTx({
@@ -213,5 +236,6 @@ module.exports = {
     assertAccountsBalances,
     printSignals,
     printBatchOutputs,
-    depositOnlyExitTx
+    depositOnlyExitTx,
+    getLeafInfo
 };

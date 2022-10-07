@@ -1,17 +1,22 @@
 const path = require("path");
-
 const wasm_tester = require("circom_tester").wasm;
-const stateUtils = require("@hermeznetwork/commonjs").stateUtils;
+const SMTMemDB = require("@hermeznetwork/commonjs/node_modules/circomlib/index").SMTMemDB;
 
-const { depositTx, depositOnlyExitTx, assertBatch, assertAccountsBalances } = require("./helpers/helpers");
+const stateUtils = require("@hermeznetwork/commonjs").stateUtils;
+const Account = require("@hermeznetwork/commonjs").HermezAccount;
+const Constants = require("@hermeznetwork/commonjs").Constants;
+const RollupDB = require("@hermeznetwork/commonjs").RollupDB;
+const SMTTmpDb = require("@hermeznetwork/commonjs").SMTTmpDb;
+
+const { depositTx, getLeafInfo } = require("./helpers/helpers");
 
 describe("Test get-NFT", function () {
     this.timeout(0);
     let circuit;
 
-    let nTx = 3;
+    let nTx = 32;
     let nLevels = 16;
-    let maxL1Tx = 2;
+    let maxL1Tx = 16;
     let maxFeeTx = 2;
 
     const account1 = new Account(1);
@@ -34,20 +39,48 @@ describe("Test get-NFT", function () {
     }
 
     before( async() => {
-        circuit = await wasm_tester(path.join(__dirname, "circuits", "get-NFT-test.circom"));
+        // circuit = await wasm_tester(path.join(__dirname, "circuits", "get-NFT-test.circom"));
     });
 
     it("Should check minimum nonce", async () => {
         const rollupDB = await newState();
 
         const bb = await rollupDB.buildBatch(nTx, nLevels, maxL1Tx, maxFeeTx);
-        await depositTx(bb, account1, 1, 0);
-        await depositTx(bb, account2, 2, 0);
+        await depositTx(bb, account1, 1, 1000);
+        await depositTx(bb, account2, 2, 2000);
         await bb.build();
         await rollupDB.consolidate(bb);
 
+        const bb2 = await rollupDB.buildBatch(nTx, nLevels, maxL1Tx, maxFeeTx);
+
+        for (let i = 0; i < 5; i++){
+            const tx = {
+                fromIdx: account1.idx,
+                loadAmountF: 0,
+                tokenID: 1,
+                fromBjjCompressed: 0,
+                fromEthAddr: 0,
+                toIdx: account2.idx,
+                amount: 25,
+                userFee: 0,
+                onChain: 0,
+                nonce: i,
+            };
+
+            account1.signTx(tx);
+            bb2.addTx(tx);
+        }
+        await bb2.build();
+
+        await rollupDB.consolidate(bb2);
+
         const s1 = await rollupDB.getStateByIdx(256);
         console.log(s1);
+
+        const res = await getLeafInfo(rollupDB, 256, 1);
+        console.log(res);
+
+
     });
 
     // it("Should check hash with Js version", async () => {
