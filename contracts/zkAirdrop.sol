@@ -49,7 +49,7 @@ contract zkAirdrop is ERC721Enumerable, Ownable {
 
         // Verify proof
         require(
-            zkVerifier.verifyProof(proofA, proofB, proofC, [uint256(hermezMerkleRoot), index]),
+            zkVerifier.verifyProof(proofA, proofB, proofC, [uint256(hermezMerkleRoot), index, uint256(uint160(msg.sender))]),
             "zkAirdrop::claimHermezNft: INVALID_PROOF"
         );
 
