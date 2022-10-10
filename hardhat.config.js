@@ -21,6 +21,15 @@ module.exports = {
             runs: 999999
           }
         }
+      },
+      {
+        version: "0.6.11",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 999999
+          }
+        }
       }
     ]
   },
@@ -69,16 +78,7 @@ module.exports = {
         initialIndex: 0,
         count: 20,
       },
-    },
-    hardhat: {
-      initialDate: "0",
-      accounts: {
-        mnemonic: process.env.MNEMONIC || DEFAULT_MNEMONIC,
-        path: "m/44'/60'/0'/0",
-        initialIndex: 0,
-        count: 20,
-      },
-    },
+    }
   },
   gasReporter: {
     currency: "USD",
