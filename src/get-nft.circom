@@ -4,9 +4,21 @@ include "./hash-state.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/smt/smtverifier.circom";
 
+/**
+ * Verifes that an account has a nonce greater than 10 and it belomgs to a given hermez rollup snapshot
+ * @input root - {Field} - snapshot hermez rollup root
+ * @input idx - {Uint32} - merkle tree index
+ * @input tokenID - {Uint32} - token identifier
+ * @input nonce - {Uint40} - nonce
+ * @input sign - {Bool} - babyjubjub sign
+ * @input balance - {Uint192} - account balance
+ * @input ay - {Field} - babyjubjub Y coordinate
+ * @input ethAddr - {Uint160} - ethereum address
+ * @input siblings[nLevels + 1] - {[Array(Field)]} - siblings merkle proof of the sender leaf
+ */
 template GetNFT(nLevels) {
     // root
-    signal input root; // public input that comes from the smart contract. Snapshot
+    signal input root; // public input that comes from the smart contract
 
     // leaf index
     signal input idx; // public input that comes from the smart contract. Used as a nullifier
@@ -19,7 +31,7 @@ template GetNFT(nLevels) {
     signal input ay;
     signal input ethAddr; // public input that comes from the smart contract
 
-    // verify smt proof
+    // data to verify smt proof
     signal input siblings[nLevels+1];
 
     // checks: nonce > MIN_NONCE
@@ -40,6 +52,7 @@ template GetNFT(nLevels) {
     state.ay <== ay;
     state.ethAddr <== ethAddr;
 
+    // verify leaf exist on the given root
 	component smtVerify = SMTVerifier(nLevels + 1);
 	smtVerify.enabled <== 1;
 	smtVerify.fnc <== 0;

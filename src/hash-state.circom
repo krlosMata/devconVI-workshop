@@ -14,7 +14,7 @@ include "../node_modules/circomlib/circuits/poseidon.circom";
  * @input sign - {Bool} - babyjubjub sign
  * @input balance - {Uint192} - account balance
  * @input ay - {Field} - babyjubjub Y coordinate
- * @input ethAddr - {Uint160} - etehreum address
+ * @input ethAddr - {Uint160} - ethereum address
  * @output out - {Field} - resulting poseidon hash
  */
 template HashState() {
