@@ -109,7 +109,10 @@ cache
 
 get-NFT-test_js
 get-NFT-test.r1cs
-get-NFT-test.sym
-multiplier2_0000.zkey
-multiplier2_0001.zkey
-multiplier2_0001.zkey
+getnft_0000.zkey
+getnft_0001.zkey
+pot13_0000.ptau
+pot13_0001.ptau
+pot13_final.ptau
+verification_key.json
+verifier.sol

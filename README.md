@@ -45,3 +45,9 @@ This is a proof of rollup usability and if a user is able to prover that it will
     snarkjs zkey export verificationkey get-NFT-test_0001.zkey verification_key.json
     snarkjs zkey export solidityverifier get-NFT-test_0001.zkey verifier.sol
 ```
+
+## Future work
+- Setup different tiers of NFT depending on the nonce
+  - `nonce` should be public then
+  - `mint` NFT depending on `nonce` selected
+- Similar circuit but proving that a certain account has more balance than X
