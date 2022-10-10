@@ -42,6 +42,8 @@ describe("Test get-NFT", function () {
 
     before( async() => {
         circuit = await wasm_tester(path.join(__dirname, "circuits", "get-NFT-test.circom"));
+        await circuit.loadConstraints();
+        console.log("Constraints: " + circuit.constraints.length + "\n");
     });
 
     it("Should check minimum nonce", async () => {
@@ -94,9 +96,10 @@ describe("Test get-NFT", function () {
 
         try {
             await circuit.calculateWitness(input, true);
-            expect(false).to.be,equal(true);
+            expect(false).to.be.equal(true);
         } catch (error) {
-            expect(error.message.includes("Error in template GetNFT_235")).to.be.equal(true);
+            console.log(error.message);
+            expect(error.message.includes("Error in template GetNFT_235 line: 44")).to.be.equal(true);
         }
     });
 

@@ -106,3 +106,9 @@ dist
 package-lock.json
 artifacts
 cache
+
+get-NFT-test_js
+get-NFT-test.r1cs
+get-NFT-test.sym
+multiplier2_0000.zkey
+multiplier2_0001.zkey
