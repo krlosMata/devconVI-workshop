@@ -1,4 +1,6 @@
 const path = require("path");
+const { expect } = require("chai");
+const Scalar = require("ffjavascript").Scalar;
 const wasm_tester = require("circom_tester").wasm;
 const SMTMemDB = require("@hermeznetwork/commonjs/node_modules/circomlib/index").SMTMemDB;
 
@@ -39,7 +41,7 @@ describe("Test get-NFT", function () {
     }
 
     before( async() => {
-        // circuit = await wasm_tester(path.join(__dirname, "circuits", "get-NFT-test.circom"));
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "get-NFT-test.circom"));
     });
 
     it("Should check minimum nonce", async () => {
@@ -74,43 +76,134 @@ describe("Test get-NFT", function () {
 
         await rollupDB.consolidate(bb2);
 
-        const s1 = await rollupDB.getStateByIdx(256);
-        console.log(s1);
+        const leafInfo = await getLeafInfo(rollupDB, 256, 2);
+        const { siblings } = leafInfo;
+        while (siblings.length < nLevels+1) siblings.push(Scalar.e(0));
 
-        const res = await getLeafInfo(rollupDB, 256, 1);
-        console.log(res);
+        const input = {
+            root: await rollupDB.getRoot(),
+            idx: 256,
+            tokenID: Scalar.e(leafInfo.state.tokenID),
+            nonce: Scalar.e(leafInfo.state.nonce),
+            sign: Scalar.e(leafInfo.state.sign),
+            balance: Scalar.e(leafInfo.state.balance),
+            ay: Scalar.fromString(leafInfo.state.ay, 16),
+            ethAddr: Scalar.fromString(leafInfo.state.ethAddr, 16),
+            siblings: siblings,
+        };
 
-
+        try {
+            await circuit.calculateWitness(input, true);
+            expect(false).to.be,equal(true);
+        } catch (error) {
+            expect(error.message.includes("Error in template GetNFT_235")).to.be.equal(true);
+        }
     });
 
-    // it("Should check hash with Js version", async () => {
-    //     const state = {
-    //         tokenID: 1,
-    //         nonce: 49,
-    //         balance: Scalar.e(12343256),
-    //         sign: 1,
-    //         ay: "144e7e10fd47e0c67a733643b760e80ed399f70e78ae97620dbb719579cd645d",
-    //         ethAddr: "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
-    //     };
+    it("Should check correct nonce", async () => {
+        const rollupDB = await newState();
 
-    //     const hashJs = stateUtils.hashState(state);
+        const bb = await rollupDB.buildBatch(nTx, nLevels, maxL1Tx, maxFeeTx);
+        await depositTx(bb, account1, 1, 1000);
+        await depositTx(bb, account2, 2, 2000);
+        await bb.build();
+        await rollupDB.consolidate(bb);
 
-    //     const input = {
-    //         tokenID: Scalar.e(state.tokenID),
-    //         nonce: Scalar.e(state.nonce),
-    //         balance: Scalar.e(state.balance),
-    //         sign: Scalar.e(state.tokenID),
-    //         ay: Scalar.fromString(state.ay, 16),
-    //         ethAddr: Scalar.fromString(state.ethAddr, 16),
-    //     };
+        const bb2 = await rollupDB.buildBatch(nTx, nLevels, maxL1Tx, maxFeeTx);
 
-    //     const witness = await circuit.calculateWitness(input, true);
-    //     await circuit.checkConstraints(witness);
+        for (let i = 0; i < 11; i++){
+            const tx = {
+                fromIdx: account1.idx,
+                loadAmountF: 0,
+                tokenID: 1,
+                fromBjjCompressed: 0,
+                fromEthAddr: 0,
+                toIdx: account2.idx,
+                amount: 25,
+                userFee: 0,
+                onChain: 0,
+                nonce: i,
+            };
 
-    //     const output = {
-    //         out: hashJs
-    //     };
+            account1.signTx(tx);
+            bb2.addTx(tx);
+        }
+        await bb2.build();
 
-    //     await circuit.assertOut(witness, output);
-    // });
+        await rollupDB.consolidate(bb2);
+
+        const leafInfo = await getLeafInfo(rollupDB, 256, 2);
+        const { siblings } = leafInfo;
+        while (siblings.length < nLevels+1) siblings.push(Scalar.e(0));
+
+        const input = {
+            root: await rollupDB.getRoot(),
+            idx: 256,
+            tokenID: Scalar.e(leafInfo.state.tokenID),
+            nonce: Scalar.e(leafInfo.state.nonce),
+            sign: Scalar.e(leafInfo.state.sign),
+            balance: Scalar.e(leafInfo.state.balance),
+            ay: Scalar.fromString(leafInfo.state.ay, 16),
+            ethAddr: Scalar.fromString(leafInfo.state.ethAddr, 16),
+            siblings: siblings,
+        };
+
+        const witness = await circuit.calculateWitness(input, true);
+        await circuit.checkConstraints(witness);
+    });
+
+    it("Should check invalid smt proof", async () => {
+        const rollupDB = await newState();
+
+        const bb = await rollupDB.buildBatch(nTx, nLevels, maxL1Tx, maxFeeTx);
+        await depositTx(bb, account1, 1, 1000);
+        await depositTx(bb, account2, 2, 2000);
+        await bb.build();
+        await rollupDB.consolidate(bb);
+
+        const bb2 = await rollupDB.buildBatch(nTx, nLevels, maxL1Tx, maxFeeTx);
+
+        for (let i = 0; i < 11; i++){
+            const tx = {
+                fromIdx: account1.idx,
+                loadAmountF: 0,
+                tokenID: 1,
+                fromBjjCompressed: 0,
+                fromEthAddr: 0,
+                toIdx: account2.idx,
+                amount: 25,
+                userFee: 0,
+                onChain: 0,
+                nonce: i,
+            };
+
+            account1.signTx(tx);
+            bb2.addTx(tx);
+        }
+        await bb2.build();
+
+        await rollupDB.consolidate(bb2);
+
+        const leafInfo = await getLeafInfo(rollupDB, 256, 2);
+        const { siblings } = leafInfo;
+        while (siblings.length < nLevels+1) siblings.push(Scalar.e(0));
+
+        const input = {
+            root: await rollupDB.getRoot(),
+            idx: 256,
+            tokenID: Scalar.e(leafInfo.state.tokenID),
+            nonce: Scalar.e(leafInfo.state.nonce),
+            sign: Scalar.e(leafInfo.state.sign),
+            balance: Scalar.e(leafInfo.state.balance),
+            ay: Scalar.fromString(leafInfo.state.ay, 16),
+            ethAddr: Scalar.fromString("0x012345679A012345679A012345679A012345679A", 16), // try to cheat msg.sender
+            siblings: siblings,
+        };
+
+        try {
+            await circuit.calculateWitness(input, true);
+        } catch (error){
+            expect(error.message.includes("Error in template SMTVerifier")).to.be.equal(true);
+        }
+    });
 });
