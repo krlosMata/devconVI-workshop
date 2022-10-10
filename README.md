@@ -33,7 +33,7 @@ This is a proof of rollup usability and if a user is able to prover that it will
 - [Leaf state-tree](https://docs.hermez.io/Hermez_1.0/developers/protocol/hermez-protocol/protocol/#account)
 - [Circom 2.0 installation and tutorial](https://docs.circom.io/getting-started/installation/)
 
-## Create zKey:
+## Create a mock powers of Tau and a zKey:
 
 ```
     circom get-NFT-test.circom --r1cs --wasm --sym --c
